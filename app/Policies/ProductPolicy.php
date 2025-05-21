@@ -11,7 +11,7 @@ class ProductPolicy
 
     public function modify(User $user, Product $product): Response
     {
-        return $user->id === $product->user_id
+        return $user->role === $product->user_role
             ? Response::allow()
             : Response::deny('You do not have access to this');
     }

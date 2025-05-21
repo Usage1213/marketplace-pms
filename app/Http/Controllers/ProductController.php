@@ -5,18 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Support\Facades\Gate as FacadesGate;
 
-class ProductController extends Controller implements HasMiddleware
+class ProductController extends Controller
 {
-    public static function middleware()
-    {
-        return [
-            new Middleware('auth:sanctum', except: ['index', 'show'])
-        ];
-    }
+
     /**
      * Display a listing of the resource.
      */
@@ -30,6 +22,11 @@ class ProductController extends Controller implements HasMiddleware
      */
     public function store(Request $request)
     {
+        // Ensure only authenticated admins can create products
+        if (!auth()->check() || auth()->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         // Validate the incoming request data
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
@@ -38,6 +35,9 @@ class ProductController extends Controller implements HasMiddleware
             'image_url' => 'nullable|string',
             'stock_quantity' => 'required|integer|min:0',
         ]);
+
+        // Assign the authenticated user's ID to the product
+        $validatedData['user_id'] = auth()->id();
 
         // Create a new product using the validated data
         $product = Product::create($validatedData);
@@ -48,6 +48,7 @@ class ProductController extends Controller implements HasMiddleware
             'product' => $product
         ], 201);
     }
+
 
 
     /**
@@ -63,7 +64,6 @@ class ProductController extends Controller implements HasMiddleware
      */
     public function update(Request $request, Product $product)
     {
-        FacadesGate::authorize('modify', $product);
         // Validate the incoming request data
         $validatedData = $request->validate([
             'name' => 'sometimes|string|max:255',
@@ -87,7 +87,6 @@ class ProductController extends Controller implements HasMiddleware
      */
     public function destroy(Product $product)
     {
-        FacadesGate::authorize('modify', $product);
         $product->delete();
 
         return response()->json([

@@ -18,9 +18,11 @@ return new class extends Migration
             $table->decimal('price', 10, 2);
             $table->string('image_url')->nullable();
             $table->integer('stock_quantity')->default(0);
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // User relationship
             $table->timestamps();
         });
     }
+
 
     /**
      * Reverse the migrations.
